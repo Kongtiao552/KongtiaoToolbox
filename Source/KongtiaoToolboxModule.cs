@@ -1,36 +1,62 @@
 ﻿using System;
-using Celeste.Mod.KongtiaoToolbox;
+using Celeste;
+using Celeste.Mod.KongtiaoToolbox.Entities;
+using Celeste.Mod.KongtiaoToolbox.Enums;
+using Microsoft.Xna.Framework;
+using Monocle;
 
 namespace Celeste.Mod.KongtiaoToolbox;
 
-public class KongtiaoToolboxModModule : EverestModule {
-    public static KongtiaoToolboxModModule Instance { get; private set; }
+public class KongtiaoToolboxModule : EverestModule {
+    public static KongtiaoToolboxModule Instance { get; private set; }
 
-    public override Type SettingsType => typeof(KongtiaoToolboxModModuleSettings);
-    public static KongtiaoToolboxModModuleSettings Settings => (KongtiaoToolboxModModuleSettings) Instance._Settings;
+    public override Type SettingsType => typeof(KongtiaoToolboxModuleSettings);
+    public static KongtiaoToolboxModuleSettings Settings => (KongtiaoToolboxModuleSettings) Instance._Settings;
 
-    public override Type SessionType => typeof(KongtiaoToolboxModuleSession);
-    public static KongtiaoToolboxModuleSession Session => (KongtiaoToolboxModuleSession) Instance._Session;
+    public TimeOverlay TimeOverlay { get; set; }
 
-    public override Type SaveDataType => typeof(KongtiaoToolboxModuleSaveData);
-    public static KongtiaoToolboxModuleSaveData SaveData => (KongtiaoToolboxModuleSaveData) Instance._SaveData;
-
-    public KongtiaoToolboxModModule() {
+    public KongtiaoToolboxModule() {
         Instance = this;
 #if DEBUG
         // debug builds use verbose logging
-        Logger.SetLogLevel(nameof(KongtiaoToolboxModModule), LogLevel.Verbose);
+        Logger.SetLogLevel(nameof(KongtiaoToolboxModule), LogLevel.Verbose);
 #else
         // release builds use info logging to reduce spam in log files
-        Logger.SetLogLevel(nameof(KongtiaoToolboxModModule), LogLevel.Info);
+        Logger.SetLogLevel(nameof(KongtiaoToolboxModule), LogLevel.Info);
 #endif
     }
 
     public override void Load() {
+        Everest.Events.Level.OnLoadLevel += OnLoadLevel;
         
+        On.Monocle.Engine.Update += Engine_Update;
     }
 
     public override void Unload() {
-        
+        Everest.Events.Level.OnLoadLevel -= OnLoadLevel;
+
+        On.Monocle.Engine.Update -= Engine_Update;
+    }
+
+    private void Engine_Update(On.Monocle.Engine.orig_Update orig, Engine self, GameTime gameTime) {
+        orig(self, gameTime);
+
+        UpdateHotkeyPresses(self, gameTime);
+    }
+
+    private void UpdateHotkeyPresses(Engine self, GameTime gameTime) {
+        if (Settings.ToggleTimeOverlay.Pressed) {
+            Settings.ShowRealTimeOverlay = !Settings.ShowRealTimeOverlay;
+            TimeOverlay?.Visible = Settings.ShowRealTimeOverlay;
+        }
+    }
+
+    private void OnLoadLevel(Level level, Player.IntroTypes playerIntro, bool isFromLoader) {
+        if (isFromLoader) {
+            TimeOverlay = new TimeOverlay();
+            TimeOverlay.Scale = Settings.Size;
+            TimeOverlay.Visible = Settings.ShowRealTimeOverlay;
+            level.Add(TimeOverlay);
+        }
     }
 }
