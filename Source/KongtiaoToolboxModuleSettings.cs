@@ -14,7 +14,7 @@ namespace Celeste.Mod.KongtiaoToolbox;
 public class KongtiaoToolboxModuleSettings : EverestModuleSettings {
 
     [SettingIgnore]
-    public KongtiaoToolboxModule Module => KongtiaoToolboxModule.Instance;
+    public static KongtiaoToolboxModule Module => KongtiaoToolboxModule.Instance;
 
     [SettingIgnore]
     public bool ShowRealTimeOverlay { get; set; }
