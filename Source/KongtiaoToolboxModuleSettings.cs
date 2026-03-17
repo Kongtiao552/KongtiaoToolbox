@@ -16,20 +16,17 @@ public class KongtiaoToolboxModuleSettings : EverestModuleSettings {
     [SettingIgnore]
     public static KongtiaoToolboxModule Module => KongtiaoToolboxModule.Instance;
 
+    [SettingIgnore] public bool ShowRealTimeOverlay { get; set; } = false;
+    [SettingIgnore] public bool ShowTimeZone { get; set; } = true;
+    [SettingIgnore] public DateFormat DateFormat { get; set; } = DateFormat.LONG;
+
     [SettingIgnore]
-    public bool ShowRealTimeOverlay { get; set; }
+    public TextOverlayPosition TimeOverlayPosition { get; set; } = TextOverlayPosition.TopMiddle;
+
+    [SettingIgnore] public int TimeOverlayXOffset { get; set; } = 0;
+    [SettingIgnore] public int TimeOverlayYOffset { get; set; } = 0;
     [SettingIgnore]
-    public bool ShowTimeZone { get; set; }
-    [SettingIgnore]
-    public DateFormat DateFormat { get; set; }
-    [SettingIgnore]
-    public TextOverlayPosition TimeOverlayPosition { get; set; }
-    [SettingIgnore]
-    public int TimeOverlayXOffset { get; set; }
-    [SettingIgnore]
-    public int TimeOverlayYOffset { get; set; }
-    [SettingIgnore]
-    public float Size { get; set; } = 1f;
+    public float Size { get; set; } = 0.75f;
     [SettingIgnore]
     public Vector2 TimeOverlayOffset => new Vector2(TimeOverlayXOffset, -TimeOverlayYOffset);
 
@@ -42,6 +39,7 @@ public class KongtiaoToolboxModuleSettings : EverestModuleSettings {
         TextMenuExt.SubMenu subMenu = new TextMenuExt.SubMenu(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_REAL_TIME_OVERLAY"), false);
 
         TextMenu.OnOff timeOverlayOption = new TextMenu.OnOff(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_SHOW_REAL_TIME_OVERLAY"), ShowRealTimeOverlay);
+
         TextMenu.OnOff showTimeZoneOption = new TextMenu.OnOff(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_SHOW_TIME_ZONE"), ShowTimeZone);
 
         float[] sizeOptions = [0.05f, 0.1f, 0.15f, 0.20f, 0.25f, 0.30f, 0.35f, 0.40f, 0.45f, 0.50f, 0.55f, 0.60f, 0.65f, 0.70f, 0.75f, 0.80f, 0.85f, 0.90f, 0.95f, 1.0f];
@@ -56,7 +54,14 @@ public class KongtiaoToolboxModuleSettings : EverestModuleSettings {
 
         timeOverlayOption.OnValueChange = value => {
             ShowRealTimeOverlay = value;
-            Module.TimeOverlay?.Visible = value;
+            Module.TimeOverlay?.Visible = ShowRealTimeOverlay;
+
+            showTimeZoneOption.Disabled = !ShowRealTimeOverlay;
+            sizeOption.Disabled = !ShowRealTimeOverlay;
+            dateFormatOption.Disabled = !ShowRealTimeOverlay;
+            positionOption.Disabled = !ShowRealTimeOverlay;
+            timeOverlayXOffsetOption.Disabled = !ShowRealTimeOverlay;
+            timeOverlayYOffsetOption.Disabled = !ShowRealTimeOverlay;
         };
 
         showTimeZoneOption.OnValueChange = value => {
@@ -82,6 +87,13 @@ public class KongtiaoToolboxModuleSettings : EverestModuleSettings {
 
         timeOverlayXOffsetOption.OnValueChange = value => TimeOverlayXOffset = value;
         timeOverlayYOffsetOption.OnValueChange = value => TimeOverlayYOffset = value;
+
+        showTimeZoneOption.Disabled = !ShowRealTimeOverlay;
+        sizeOption.Disabled = !ShowRealTimeOverlay;
+        dateFormatOption.Disabled = !ShowRealTimeOverlay;
+        positionOption.Disabled = !ShowRealTimeOverlay;
+        timeOverlayXOffsetOption.Disabled = !ShowRealTimeOverlay;
+        timeOverlayYOffsetOption.Disabled = !ShowRealTimeOverlay;
 
         subMenu.Add(timeOverlayOption);
         subMenu.Add(showTimeZoneOption);
