@@ -12,10 +12,13 @@ public class TextOverlay : Entity {
     public static KongtiaoToolboxModuleSettings Settings => KongtiaoToolboxModule.Settings;
     public KongtiaoToolboxModule Module => KongtiaoToolboxModule.Instance;
     public string Text;
+    public bool Outline = true;
     public float Scale;
+    public float Transparency = 1f;
 
-    public Color color = Color.White;
-    public Color outlineColor = Color.Black;
+    public Color Color = Color.White;
+    public Color OutlineColor = Color.Black;
+    public int OutlineThickness = 2;
 
     public TextOverlay(string text = "", float scale = 1f) {
         this.Text = text;
@@ -28,7 +31,11 @@ public class TextOverlay : Entity {
     }
 
     public override void Render() {
-        ActiveFont.DrawOutline(Text, Position + Settings.TimeOverlayOffset, Vector2.Zero, Vector2.One * Scale, color, 2, outlineColor);
+        if (Outline) {
+            ActiveFont.DrawOutline(Text, Position + Settings.TimeOverlayOffset, Vector2.Zero, Vector2.One * Scale, Color * Transparency, OutlineThickness, OutlineColor * Transparency);
+        } else {
+            ActiveFont.Draw(Text, Position + Settings.TimeOverlayOffset, Vector2.Zero, Vector2.One * Scale, Color * Transparency);
+        }
     }
 
 }

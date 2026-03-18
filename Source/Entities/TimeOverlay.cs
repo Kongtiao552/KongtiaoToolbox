@@ -20,6 +20,8 @@ public class TimeOverlay : TextOverlay {
     }
 
     public override void Update() {
-        Text = dateString;
+        if (Visible) {
+            Text = dateString;
+        }
     }
 }

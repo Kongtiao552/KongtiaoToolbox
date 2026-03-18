@@ -56,6 +56,10 @@ public class KongtiaoToolboxModule : EverestModule {
             TimeOverlay = new TimeOverlay();
             TimeOverlay.Scale = Settings.Size;
             TimeOverlay.Visible = Settings.ShowRealTimeOverlay;
+            TimeOverlay.Color = Settings.TimeOverlayColor;
+            TimeOverlay.Outline = Settings.TimeOverlayOutline;
+            TimeOverlay.OutlineColor = Settings.TimeOverlayOutlineColor;
+            TimeOverlay.Transparency = Settings.TimeOverlayTransparency;
             level.Add(TimeOverlay);
         }
     }
