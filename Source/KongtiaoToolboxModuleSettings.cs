@@ -5,10 +5,10 @@ using Celeste.Mod.KongtiaoToolbox.Entities;
 using Celeste.Mod.KongtiaoToolbox.Enums;
 using Celeste.Mod.KongtiaoToolbox.Menu;
 using Microsoft.Xna.Framework;
-using KongtiaoToolbox.Menu;
 using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using Celeste.Mod.KongtiaoToolbox.Misc;
 
 namespace Celeste.Mod.KongtiaoToolbox;
 
@@ -32,9 +32,41 @@ public class KongtiaoToolboxModuleSettings : EverestModuleSettings {
     [SettingIgnore] public int TimeOverlayXOffset { get; set; } = 0;
     [SettingIgnore] public int TimeOverlayYOffset { get; set; } = 0;
     [SettingIgnore]
-    public float Size { get; set; } = 0.75f;
+    public float TimeOverlaySize { get; set; } = 0.75f;
     [SettingIgnore]
     public Vector2 TimeOverlayOffset => new Vector2(TimeOverlayXOffset, -TimeOverlayYOffset);
+
+    [SettingIgnore]
+    public int DefaultInGameMusicVolume { get; set; } = 5;
+
+    [SettingName("MODOPTION_KONGTIAO_TOOLBOX_ENABLE_TOOLTIP")]
+    public bool EnableTooltips { get; set; } = true;
+
+    public void CreateDefaultInGameMusicVolumeEntry(TextMenu menu, bool inGame) {
+        TextMenu.Slider defaultInGameMusicVolumeOption = new TextMenu.Slider(
+            Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_DEFAULT_IN_GAME_MUSIC_VOLUME"), IntToString, 0, 10, DefaultInGameMusicVolume
+        );
+
+        defaultInGameMusicVolumeOption.OnValueChange = value => DefaultInGameMusicVolume = value;
+
+        menu.Add(defaultInGameMusicVolumeOption);
+
+        defaultInGameMusicVolumeOption.AddDescription(menu, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_DEFAULT_IN_GAME_MUSIC_VOLUME_DESCRIPTION"));
+    }
+    
+    [SettingIgnore]
+    public bool ToggleExternalMediaPlayers { get; set; } = false;
+
+    public void CreateToggleExternalMediaPlayersEntry(TextMenu menu, bool inGame) {
+        TextMenu.OnOff toggleExternalMediaPlayersOption = new TextMenu.OnOff(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TOGGLE_EXTERNAL_MEDIA_PLAYERS"), ToggleExternalMediaPlayers);
+
+        toggleExternalMediaPlayersOption.OnValueChange = value => ToggleExternalMediaPlayers = value;
+        toggleExternalMediaPlayersOption.Disabled = !Utils.IsWindows;
+
+        menu.Add(toggleExternalMediaPlayersOption);
+
+        toggleExternalMediaPlayersOption.AddDescription(menu, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TOGGLE_EXTERNAL_MEDIA_PLAYERS_DESCRIPTION"));
+    }
 
     public bool TimeOverlayOption { get; set; }
 
@@ -50,26 +82,34 @@ public class KongtiaoToolboxModuleSettings : EverestModuleSettings {
 
         TextMenu.OnOff timeOverlayOutlineOption = new TextMenu.OnOff(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TIME_OVERLAY_OUTLINE"), TimeOverlayOutline);
 
-        Dictionary<Color, string> colorOptions = new Dictionary<Color, string> {
+        Dictionary<Color, string> colorList = new Dictionary<Color, string> {
             { Color.Black, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_BLACK") },
             { Color.White, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_WHITE") },
             { Color.Red, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_RED") },
             { Color.Green, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_GREEN") },
             { Color.Blue, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_BLUE") },
+            { Color.LightBlue, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_LIGHT_BLUE") },
+            { Color.SkyBlue, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_SKY_BLUE") },
+            { Color.Pink, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_PINK") },
+            { Color.Aquamarine, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_AQUAMARINE") },
+            { Color.Gold, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_GOLD") },
+            { Color.Orange, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_ORANGE") },
+            { Color.Purple, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_PURPLE") },
+            { Color.Brown, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_BROWN") },
+            { Color.Gray, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_GRAY") },
+            { Color.HotPink, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_HOT_PINK") },
             { Color.Yellow, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_YELLOW") },
             { Color.Magenta, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_MAGENTA") },
-            { Color.Cyan, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_CYAN") },
-            { Color.LightBlue, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_LIGHT_BLUE") },
-            { Color.Pink, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_PINK") }
-        };
+            { Color.Cyan, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_CYAN") }
+        };  
 
-        TextMenuExt.EnumerableSlider<Color> timeOverlayColorOption = new TextMenuExt.EnumerableSlider<Color>(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TIME_OVERLAY_COLOR"), colorOptions, TimeOverlayColor);
+        TextMenuExt.EnumerableSlider<Color> timeOverlayColorOption = new TextMenuExt.EnumerableSlider<Color>(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TIME_OVERLAY_COLOR"), colorList, TimeOverlayColor);
 
-        TextMenuExt.EnumerableSlider<Color> timeOverlayOutlineColorOption = new TextMenuExt.EnumerableSlider<Color>(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TIME_OVERLAY_OUTLINE_COLOR"), colorOptions, TimeOverlayOutlineColor);
+        TextMenuExt.EnumerableSlider<Color> timeOverlayOutlineColorOption = new TextMenuExt.EnumerableSlider<Color>(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TIME_OVERLAY_OUTLINE_COLOR"), colorList, TimeOverlayOutlineColor);
 
         float[] sizeOptions = [0.05f, 0.1f, 0.15f, 0.20f, 0.25f, 0.30f, 0.35f, 0.40f, 0.45f, 0.50f, 0.55f, 0.60f, 0.65f, 0.70f, 0.75f, 0.80f, 0.85f, 0.90f, 0.95f, 1.0f];
 
-        CustomFloatSlider sizeOption = new CustomFloatSlider(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TIME_OVERLAY_SIZE"), FloatToPercentString, Size, sizeOptions);
+        CustomFloatSlider sizeOption = new CustomFloatSlider(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TIME_OVERLAY_SIZE"), FloatToPercentString, TimeOverlaySize, sizeOptions);
         CustomFloatSlider timeOverlayTransparencyOption = new CustomFloatSlider(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TIME_OVERLAY_TRANSPARENCY"), FloatToPercentString, TimeOverlayTransparency, sizeOptions);
         
         CustomEnumSlider<DateFormat> dateFormatOption = new CustomEnumSlider<DateFormat>(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_DATE_FORMAT"), DateFormat);
@@ -97,45 +137,44 @@ public class KongtiaoToolboxModuleSettings : EverestModuleSettings {
 
         showTimeZoneOption.OnValueChange = value => {
             ShowTimeZone = value;
-            Module.TimeOverlay?.Position = TimeOverlayPosition.ToVector2(TimeOverlay.dateString);
+            Module.TimeOverlay?.UpdateSettings();
         };
 
         dateFormatOption.OnValueChange = value => {
             DateFormat = value;
-            Module.TimeOverlay?.Position = TimeOverlayPosition.ToVector2(TimeOverlay.dateString);
+            Module.TimeOverlay?.UpdateSettings();
         };
 
         positionOption.OnValueChange = value => {
             TimeOverlayPosition = value;
-            Module.TimeOverlay?.Position = TimeOverlayPosition.ToVector2(TimeOverlay.dateString);
+            Module.TimeOverlay?.UpdateSettings();
         };
 
         sizeOption.OnValueChange = value => {
-            Size = value;
-            Module.TimeOverlay?.Scale = value;
-            Module.TimeOverlay?.Position = TimeOverlayPosition.ToVector2(TimeOverlay.dateString);
+            TimeOverlaySize = value;
+            Module.TimeOverlay?.UpdateSettings();
         };
 
         timeOverlayColorOption.OnValueChange = value => {
             TimeOverlayColor = value;
-            Module.TimeOverlay?.Color = TimeOverlayColor;
+            Module.TimeOverlay?.UpdateSettings();
         };
 
         timeOverlayOutlineOption.OnValueChange = value => {
             TimeOverlayOutline = value;
-            Module.TimeOverlay?.Outline = TimeOverlayOutline;
+            Module.TimeOverlay?.UpdateSettings();
 
             timeOverlayOutlineColorOption.Disabled = !ShowRealTimeOverlay || !TimeOverlayOutline;
         };
 
         timeOverlayOutlineColorOption.OnValueChange = value => {
             TimeOverlayOutlineColor = value;
-            Module.TimeOverlay?.OutlineColor = TimeOverlayOutlineColor;
+            Module.TimeOverlay?.UpdateSettings();
         }; 
 
         timeOverlayTransparencyOption.OnValueChange = value => {
             TimeOverlayTransparency = value;
-            Module.TimeOverlay?.Transparency = TimeOverlayTransparency;
+            Module.TimeOverlay?.UpdateSettings();
         };
 
         timeOverlayXOffsetOption.OnValueChange = value => TimeOverlayXOffset = value;
@@ -166,9 +205,14 @@ public class KongtiaoToolboxModuleSettings : EverestModuleSettings {
         subMenu.Add(timeOverlayYOffsetOption);
 
         menu.Add(subMenu);
+
+        Utils.Log("Time overlay options added");
     }
 
     [SettingName("MODOPTION_KONGTIAO_TOOLBOX_TOGGLE_TIME_OVERLAY")]
     public ButtonBinding ToggleTimeOverlay { get; set; }
+
+    [SettingName("MODOPTION_KONGTIAO_TOOLBOX_TOGGLE_IN_GAME_MUSIC")]
+    public ButtonBinding ToggleInGameMusic { get; set; }
 
 }

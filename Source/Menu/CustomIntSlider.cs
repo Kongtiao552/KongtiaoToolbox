@@ -4,7 +4,7 @@ using System;
 using Monocle;
 using System.Collections.Generic;
 
-namespace KongtiaoToolbox.Menu
+namespace Celeste.Mod.KongtiaoToolbox.Menu
 {
     public class CustomIntSlider : TextMenu.Option<int>
     {

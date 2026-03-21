@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
 using Celeste;
 using Celeste.Mod.KongtiaoToolbox.Entities;
 using Celeste.Mod.KongtiaoToolbox.Enums;
+using Celeste.Mod.KongtiaoToolbox.Misc;
 using Microsoft.Xna.Framework;
 using Monocle;
 
@@ -11,7 +14,7 @@ public class KongtiaoToolboxModule : EverestModule {
     public static KongtiaoToolboxModule Instance { get; private set; }
 
     public override Type SettingsType => typeof(KongtiaoToolboxModuleSettings);
-    public static KongtiaoToolboxModuleSettings Settings => (KongtiaoToolboxModuleSettings) Instance._Settings;
+    public static KongtiaoToolboxModuleSettings ModSettings => (KongtiaoToolboxModuleSettings) Instance._Settings;
 
     public TimeOverlay TimeOverlay { get; set; }
 
@@ -28,12 +31,14 @@ public class KongtiaoToolboxModule : EverestModule {
 
     public override void Load() {
         Everest.Events.Level.OnLoadLevel += OnLoadLevel;
+        Everest.Events.MainMenu.OnCreateButtons += MainMenu_OnCreateButtons;
         
         On.Monocle.Engine.Update += Engine_Update;
     }
 
     public override void Unload() {
         Everest.Events.Level.OnLoadLevel -= OnLoadLevel;
+        Everest.Events.MainMenu.OnCreateButtons -= MainMenu_OnCreateButtons;
 
         On.Monocle.Engine.Update -= Engine_Update;
     }
@@ -41,26 +46,39 @@ public class KongtiaoToolboxModule : EverestModule {
     private void Engine_Update(On.Monocle.Engine.orig_Update orig, Engine self, GameTime gameTime) {
         orig(self, gameTime);
 
-        UpdateHotkeyPresses(self, gameTime);
+        if (self.scene is Level level && !level.Paused) {
+            UpdateHotkeyPresses(self, gameTime);
+        }
     }
 
     private void UpdateHotkeyPresses(Engine self, GameTime gameTime) {
-        if (Settings.ToggleTimeOverlay.Pressed) {
-            Settings.ShowRealTimeOverlay = !Settings.ShowRealTimeOverlay;
-            TimeOverlay?.Visible = Settings.ShowRealTimeOverlay;
+        if (ModSettings.ToggleTimeOverlay.Pressed) {
+            ModSettings.ShowRealTimeOverlay = !ModSettings.ShowRealTimeOverlay;
+            TimeOverlay.UpdateSettings();
         }
+
+        if (ModSettings.ToggleInGameMusic.Pressed) {
+            if (Settings.Instance.MusicVolume == 0) {
+                Utils.ChangeInGameMusicVolume(ModSettings.DefaultInGameMusicVolume);
+            } else {
+                Utils.ChangeInGameMusicVolume(0);
+            }
+
+            if (ModSettings.ToggleExternalMediaPlayers) Utils.ToggleExternalMediaPlayers();
+        }
+    }
+
+    private void MainMenu_OnCreateButtons(OuiMainMenu menu, List<MenuButton> buttons) {
+        Utils.CultureInfo = new CultureInfo("KONGTIAO_TOOLBOX_CULTURE_CODE".DialogCleanOrNull() ?? "en-us");
+
+        Utils.Log($"CultureInfo Initialized: {Utils.CultureInfo.Name}");
     }
 
     private void OnLoadLevel(Level level, Player.IntroTypes playerIntro, bool isFromLoader) {
         if (isFromLoader) {
             TimeOverlay = new TimeOverlay();
-            TimeOverlay.Scale = Settings.Size;
-            TimeOverlay.Visible = Settings.ShowRealTimeOverlay;
-            TimeOverlay.Color = Settings.TimeOverlayColor;
-            TimeOverlay.Outline = Settings.TimeOverlayOutline;
-            TimeOverlay.OutlineColor = Settings.TimeOverlayOutlineColor;
-            TimeOverlay.Transparency = Settings.TimeOverlayTransparency;
             level.Add(TimeOverlay);
+            Utils.Log("Time overlay added");
         }
     }
 }

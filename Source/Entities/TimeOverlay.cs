@@ -3,25 +3,36 @@ using Celeste.Mod.KongtiaoToolbox.Entities;
 using System;
 using Celeste.Mod.KongtiaoToolbox.Enums;
 using System.Reflection;
+using Celeste.Mod.KongtiaoToolbox.Misc;
 
 namespace Celeste.Mod.KongtiaoToolbox.Entities;
 public class TimeOverlay : TextOverlay {
-
-    public static string timeZoneInfo = $" (UTC+{TimeZoneInfo.Local.BaseUtcOffset})";
-
-    public static string dateString {
-        get {
-            string rawDateString = Settings.DateFormat == DateFormat.LONG ? DateTime.Now.ToLongDateString() + " " + DateTime.Now.ToLongTimeString() : DateTime.Now.ToShortDateString() + " " + DateTime.Now.ToShortTimeString();
-            return KongtiaoToolboxModule.Settings.ShowTimeZone ? rawDateString + timeZoneInfo : rawDateString;
-        }
-    }
     
-    public TimeOverlay() : base(dateString) {
+    public TimeOverlay() : base(GetDateString()) {
+        UpdateSettings();
+    }
+
+    public static string GetDateString() {
+        string rawDateString = ModSettings.DateFormat == DateFormat.LONG ? Utils.GetLongDateString() : Utils.GetShortDateString();
+        return ModSettings.ShowTimeZone ? rawDateString + Utils.timeZoneInfo : rawDateString;
+    }
+
+
+    public void UpdateSettings() {
+        UpdateSettings(
+            ModSettings.TimeOverlaySize,
+            ModSettings.ShowRealTimeOverlay,
+            ModSettings.TimeOverlayColor,
+            ModSettings.TimeOverlayOutline,
+            ModSettings.TimeOverlayOutlineColor,
+            ModSettings.TimeOverlayTransparency,
+            GetDateString()
+        );
     }
 
     public override void Update() {
         if (Visible) {
-            Text = dateString;
+            Text = GetDateString();
         }
     }
 }
