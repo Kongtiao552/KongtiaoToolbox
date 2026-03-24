@@ -18,7 +18,7 @@ public static class Utils {
 
     public static CultureInfo CultureInfo = CultureInfo.CurrentCulture;
 
-    public static string timeZoneInfo = $" (UTC+{TimeZoneInfo.Local.BaseUtcOffset})";
+    public static string timeZoneInfo = "";
 
     public static string GetLongDateString() => DateTime.Now.ToString("D", CultureInfo) + " " + DateTime.Now.ToString("T", CultureInfo);
     public static string GetShortDateString() => DateTime.Now.ToString("d", CultureInfo) + " " + DateTime.Now.ToString("t", CultureInfo);

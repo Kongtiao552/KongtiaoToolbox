@@ -29,11 +29,25 @@ public class KongtiaoToolboxModule : EverestModule {
 #endif
     }
 
+    public void InitializeConstants() {
+        // Initialize time zone info
+        TimeZoneInfo localZone = TimeZoneInfo.Local;
+        TimeSpan offset = localZone.BaseUtcOffset;
+        double offsetHours = offset.TotalHours;
+        string sign = offsetHours == 0d ? "" : offsetHours > 0d ? "+" : "-";
+        offset = offset.Duration();
+        Utils.timeZoneInfo = offsetHours == 0d ? $" (UTC)" : $" (UTC{sign}{offset})";
+    }
+
     public override void Load() {
+        InitializeConstants();
+
         Everest.Events.Level.OnLoadLevel += OnLoadLevel;
         Everest.Events.MainMenu.OnCreateButtons += MainMenu_OnCreateButtons;
         
         On.Monocle.Engine.Update += Engine_Update;
+
+ 
     }
 
     public override void Unload() {
