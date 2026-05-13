@@ -1,5 +1,5 @@
 - Name: KongtiaoToolbox
-  Version: 1.1.1
+  Version: 1.1.2
   DLL: bin/KongtiaoToolbox.dll
   Dependencies:
     - Name: EverestCore
