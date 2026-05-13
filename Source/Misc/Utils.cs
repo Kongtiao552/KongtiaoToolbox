@@ -20,10 +20,10 @@ public static class Utils {
 
     public static string timeZoneInfo = "";
 
-    public static string GetLongDateString() => DateTime.Now.ToString("D", CultureInfo) + " " + DateTime.Now.ToString("T", CultureInfo);
-    public static string GetShortDateString() => DateTime.Now.ToString("d", CultureInfo) + " " + DateTime.Now.ToString("t", CultureInfo);
+    public static string GetLongDateTimeString() => DateTime.Now.ToString("D", CultureInfo) + " " + DateTime.Now.ToString("T", CultureInfo);
+    public static string GetShortDateTimeString() => DateTime.Now.ToString("d", CultureInfo) + " " + DateTime.Now.ToString("t", CultureInfo);
 
-    public static void ChangeInGameMusicVolume(int volume) {
+    public static void SetInGameMusicVolume(int volume) {
         Settings.Instance.MusicVolume = volume;
         Settings.Instance.ApplyMusicVolume();
 
@@ -56,9 +56,38 @@ public static class Utils {
             Tooltip.Show(Dialog.Get("MODOPTION_KONGTIAO_TOOLBOX_TOGGLE_EXTERNAL_MEDIA_PLAYERS_NOTE1"));
             Log("Failed to toggle external media players: user32.dll not found", LogLevel.Error);
         } catch (Exception e) {
-            Tooltip.Show(String.Format(Dialog.Get("MODOPTION_KONGTIAO_TOOLBOX_TOGGLE_EXTERNAL_MEDIA_PLAYERS_NOTE2"), e.Message));
+            Tooltip.Show(string.Format(Dialog.Get("MODOPTION_KONGTIAO_TOOLBOX_TOGGLE_EXTERNAL_MEDIA_PLAYERS_NOTE2"), e.Message));
             Log($"Failed to toggle external media players: {e.Message}", LogLevel.Error);
         }
+    }
+
+    public static bool TryParseColor(string hex, out Color color) {
+        color = default;
+
+        if (string.IsNullOrEmpty(hex)) {
+            return false;
+        }
+
+        hex = hex.Replace("#", "").Trim();
+
+        if (hex.Length < 6) {
+            return false;
+        }
+
+        bool flag = int.TryParse(hex.Substring(0, 2), NumberStyles.HexNumber, null, out int r);
+        bool flag1 = int.TryParse(hex.Substring(2, 2), NumberStyles.HexNumber, null, out int g);
+        bool flag2 = int.TryParse(hex.Substring(4, 2), NumberStyles.HexNumber, null, out int b);
+
+        if (flag && flag1 && flag2) {
+            color = new Color(r, g, b);
+            return true;
+        }
+
+        return false;
+    } 
+
+    public static string ColorToHex(Color color) {
+        return $"#{color.R:X2}{color.G:X2}{color.B:X2}";
     }
 
 }

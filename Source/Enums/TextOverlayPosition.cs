@@ -1,6 +1,6 @@
 namespace Celeste.Mod.KongtiaoToolbox.Enums
 {
-    public enum TextOverlayPosition
+    public enum TimeOverlayPosition
     {
         TopLeft,
         TopRight,

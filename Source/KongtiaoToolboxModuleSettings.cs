@@ -1,40 +1,51 @@
 using System;
 using Monocle;
-using Celeste;
-using Celeste.Mod.KongtiaoToolbox.Entities;
 using Celeste.Mod.KongtiaoToolbox.Enums;
-using Celeste.Mod.KongtiaoToolbox.Menu;
+using Celeste.Mod.KongtiaoToolbox.Entities.Menu;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using Celeste.Mod.KongtiaoToolbox.Misc;
+using YamlDotNet.Serialization;
+using Celeste.Mod.KongtiaoToolbox.Entities;
 
 namespace Celeste.Mod.KongtiaoToolbox;
 
 [SettingName("MODOPTION_KONGTIAO_TOOLBOX_MODULE_TITLE")]
 public class KongtiaoToolboxModuleSettings : EverestModuleSettings {
 
+    public static TimeOverlay TimeOverlay => KongtiaoToolboxModule.TimeOverlay;
+
+    [SettingIgnore] 
+    public bool ShowRealTimeOverlay { get; set; } = false;
+
+    [SettingIgnore] 
+    public bool ShowTimeZone { get; set; } = true;
+
+    [SettingIgnore] 
+    public DateFormat DateFormat { get; set; } = DateFormat.LONG;
+
+    [SettingIgnore] 
+    public Color TimeOverlayColor { get; set; } = Color.White;
+
+    [SettingIgnore] 
+    public bool TimeOverlayOutline { get; set; } = true;
+
+    [SettingIgnore] 
+    public Color TimeOverlayOutlineColor { get; set; } = Color.Black;
+
+    [SettingIgnore] 
+    public float TimeOverlayOpacity { get; set; } = 1f;
+
     [SettingIgnore]
-    public static KongtiaoToolboxModule Module => KongtiaoToolboxModule.Instance;
+    public TimeOverlayPosition TimeOverlayPosition { get; set; } = TimeOverlayPosition.TopMiddle;
 
-    [SettingIgnore] public bool ShowRealTimeOverlay { get; set; } = false;
-    [SettingIgnore] public bool ShowTimeZone { get; set; } = true;
-    [SettingIgnore] public DateFormat DateFormat { get; set; } = DateFormat.LONG;
-    [SettingIgnore] public Color TimeOverlayColor { get; set; } = Color.White;
-    [SettingIgnore] public bool TimeOverlayOutline { get; set; } = true;
-    [SettingIgnore] public Color TimeOverlayOutlineColor { get; set; } = Color.Black;
-    [SettingIgnore] public float TimeOverlayTransparency { get; set; } = 1f;
+    [SettingIgnore] 
+    public int TimeOverlayXOffset { get; set; } = 0;
 
-    [SettingIgnore]
-    public TextOverlayPosition TimeOverlayPosition { get; set; } = TextOverlayPosition.TopMiddle;
+    [SettingIgnore] 
+    public int TimeOverlayYOffset { get; set; } = 0;
 
-    [SettingIgnore] public int TimeOverlayXOffset { get; set; } = 0;
-    [SettingIgnore] public int TimeOverlayYOffset { get; set; } = 0;
     [SettingIgnore]
     public float TimeOverlaySize { get; set; } = 0.75f;
-    [SettingIgnore]
-    public Vector2 TimeOverlayOffset => new Vector2(TimeOverlayXOffset, -TimeOverlayYOffset);
 
     [SettingIgnore]
     public int DefaultInGameMusicVolume { get; set; } = 5;
@@ -43,11 +54,9 @@ public class KongtiaoToolboxModuleSettings : EverestModuleSettings {
     public bool EnableTooltips { get; set; } = true;
 
     public void CreateDefaultInGameMusicVolumeEntry(TextMenu menu, bool inGame) {
-        TextMenu.Slider defaultInGameMusicVolumeOption = new TextMenu.Slider(
-            Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_DEFAULT_IN_GAME_MUSIC_VOLUME"), IntToString, 0, 10, DefaultInGameMusicVolume
-        );
-
-        defaultInGameMusicVolumeOption.OnValueChange = value => DefaultInGameMusicVolume = value;
+        TextMenu.Slider defaultInGameMusicVolumeOption = new TextMenu.Slider(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_DEFAULT_IN_GAME_MUSIC_VOLUME"), v => v.ToString(), 0, 10, DefaultInGameMusicVolume) {
+            OnValueChange = v => DefaultInGameMusicVolume = v
+        };
 
         menu.Add(defaultInGameMusicVolumeOption);
 
@@ -58,146 +67,137 @@ public class KongtiaoToolboxModuleSettings : EverestModuleSettings {
     public bool ToggleExternalMediaPlayers { get; set; } = false;
 
     public void CreateToggleExternalMediaPlayersEntry(TextMenu menu, bool inGame) {
-        TextMenu.OnOff toggleExternalMediaPlayersOption = new TextMenu.OnOff(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TOGGLE_EXTERNAL_MEDIA_PLAYERS"), ToggleExternalMediaPlayers);
-
-        toggleExternalMediaPlayersOption.OnValueChange = value => ToggleExternalMediaPlayers = value;
-        toggleExternalMediaPlayersOption.Disabled = !Utils.IsWindows;
+        TextMenu.OnOff toggleExternalMediaPlayersOption = new TextMenu.OnOff(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TOGGLE_EXTERNAL_MEDIA_PLAYERS"), ToggleExternalMediaPlayers) {
+            OnValueChange = value => ToggleExternalMediaPlayers = value
+        };
 
         menu.Add(toggleExternalMediaPlayersOption);
 
         toggleExternalMediaPlayersOption.AddDescription(menu, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TOGGLE_EXTERNAL_MEDIA_PLAYERS_DESCRIPTION"));
     }
 
+    [YamlIgnore]
     public bool TimeOverlayOption { get; set; }
 
-    public static string IntToString(int v) => v.ToString();
-    public static string FloatToPercentString(float v) => v.ToString("P0");
-
     public void CreateTimeOverlayOptionEntry(TextMenu menu, bool inGame) {
+        if (!inGame) {
+            return;
+        }
+
+        string colorOptionDesc = Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_OPTION_DESC");
+
         TextMenuExt.SubMenu subMenu = new TextMenuExt.SubMenu(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_REAL_TIME_OVERLAY"), false);
 
-        TextMenu.OnOff timeOverlayOption = new TextMenu.OnOff(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_SHOW_REAL_TIME_OVERLAY"), ShowRealTimeOverlay);
+        List<KeyValuePair<float, string>> percentOptions = new List<KeyValuePair<float, string>>() {
+            new KeyValuePair<float, string>(0f, "0%"),
+            new KeyValuePair<float, string>(0.05f, "5%"),
+            new KeyValuePair<float, string>(0.1f, "10%"),
+            new KeyValuePair<float, string>(0.15f, "15%"),
+            new KeyValuePair<float, string>(0.2f, "20%"),
+            new KeyValuePair<float, string>(0.25f, "25%"),
+            new KeyValuePair<float, string>(0.3f, "30%"),
+            new KeyValuePair<float, string>(0.35f, "35%"),
+            new KeyValuePair<float, string>(0.4f, "40%"),
+            new KeyValuePair<float, string>(0.45f, "45%"),
+            new KeyValuePair<float, string>(0.5f, "50%"),
+            new KeyValuePair<float, string>(0.55f, "55%"),
+            new KeyValuePair<float, string>(0.6f, "60%"),
+            new KeyValuePair<float, string>(0.65f, "65%"),
+            new KeyValuePair<float, string>(0.7f, "70%"),
+            new KeyValuePair<float, string>(0.75f, "75%"),
+            new KeyValuePair<float, string>(0.8f, "80%"),
+            new KeyValuePair<float, string>(0.85f, "85%"),
+            new KeyValuePair<float, string>(0.9f, "90%"),
+            new KeyValuePair<float, string>(0.95f, "95%"),
+            new KeyValuePair<float, string>(1f, "100%"),
+        };
 
-        TextMenu.OnOff showTimeZoneOption = new TextMenu.OnOff(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_SHOW_TIME_ZONE"), ShowTimeZone);
-
-        TextMenu.OnOff timeOverlayOutlineOption = new TextMenu.OnOff(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TIME_OVERLAY_OUTLINE"), TimeOverlayOutline);
-
-        Dictionary<Color, string> colorList = new Dictionary<Color, string> {
-            { Color.Black, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_BLACK") },
-            { Color.White, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_WHITE") },
-            { Color.Red, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_RED") },
-            { Color.Green, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_GREEN") },
-            { Color.Blue, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_BLUE") },
-            { Color.LightBlue, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_LIGHT_BLUE") },
-            { Color.SkyBlue, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_SKY_BLUE") },
-            { Color.Pink, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_PINK") },
-            { Color.Aquamarine, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_AQUAMARINE") },
-            { Color.Gold, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_GOLD") },
-            { Color.Orange, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_ORANGE") },
-            { Color.Purple, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_PURPLE") },
-            { Color.Brown, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_BROWN") },
-            { Color.Gray, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_GRAY") },
-            { Color.HotPink, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_HOT_PINK") },
-            { Color.Yellow, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_YELLOW") },
-            { Color.Magenta, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_MAGENTA") },
-            { Color.Cyan, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_COLOR_CYAN") }
-        };  
-
-        TextMenuExt.EnumerableSlider<Color> timeOverlayColorOption = new TextMenuExt.EnumerableSlider<Color>(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TIME_OVERLAY_COLOR"), colorList, TimeOverlayColor);
-
-        TextMenuExt.EnumerableSlider<Color> timeOverlayOutlineColorOption = new TextMenuExt.EnumerableSlider<Color>(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TIME_OVERLAY_OUTLINE_COLOR"), colorList, TimeOverlayOutlineColor);
-
-        float[] sizeOptions = [0.05f, 0.1f, 0.15f, 0.20f, 0.25f, 0.30f, 0.35f, 0.40f, 0.45f, 0.50f, 0.55f, 0.60f, 0.65f, 0.70f, 0.75f, 0.80f, 0.85f, 0.90f, 0.95f, 1.0f];
-
-        CustomFloatSlider sizeOption = new CustomFloatSlider(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TIME_OVERLAY_SIZE"), FloatToPercentString, TimeOverlaySize, sizeOptions);
-        CustomFloatSlider timeOverlayTransparencyOption = new CustomFloatSlider(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TIME_OVERLAY_TRANSPARENCY"), FloatToPercentString, TimeOverlayTransparency, sizeOptions);
+        TextMenu.OnOff timeOverlayOption = new TextMenu.OnOff(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_SHOW_REAL_TIME_OVERLAY"), ShowRealTimeOverlay) {
+            OnValueChange = v => {
+                ShowRealTimeOverlay = v;
+                TimeOverlay.Visible = ShowRealTimeOverlay;
+            }
+        };
         
-        CustomEnumSlider<DateFormat> dateFormatOption = new CustomEnumSlider<DateFormat>(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_DATE_FORMAT"), DateFormat);
-        CustomEnumSlider<TextOverlayPosition> positionOption = new CustomEnumSlider<TextOverlayPosition>(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TIME_OVERLAY_POSITION"), TimeOverlayPosition);
-
-        CustomIntSlider timeOverlayXOffsetOption = new CustomIntSlider(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TIME_OVERLAY_X_OFFSET"), IntToString, -500, 500, TimeOverlayXOffset, 20);
-        CustomIntSlider timeOverlayYOffsetOption = new CustomIntSlider(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TIME_OVERLAY_Y_OFFSET"), IntToString, -500, 500, TimeOverlayYOffset, 20);
-
-        timeOverlayOption.OnValueChange = value => {
-            ShowRealTimeOverlay = value;
-            Module.TimeOverlay?.Visible = ShowRealTimeOverlay;
-
-            showTimeZoneOption.Disabled = !ShowRealTimeOverlay;
-            timeOverlayOutlineOption.Disabled = !ShowRealTimeOverlay;
-            sizeOption.Disabled = !ShowRealTimeOverlay;
-            dateFormatOption.Disabled = !ShowRealTimeOverlay;
-            positionOption.Disabled = !ShowRealTimeOverlay;
-            timeOverlayXOffsetOption.Disabled = !ShowRealTimeOverlay;
-            timeOverlayYOffsetOption.Disabled = !ShowRealTimeOverlay;
-            timeOverlayColorOption.Disabled = !ShowRealTimeOverlay;
-            timeOverlayTransparencyOption.Disabled = !ShowRealTimeOverlay;
-
-            timeOverlayOutlineColorOption.Disabled = !ShowRealTimeOverlay || !TimeOverlayOutline;
+        TextMenu.OnOff showTimeZoneOption = new TextMenu.OnOff(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_SHOW_TIME_ZONE"), ShowTimeZone) {
+            OnValueChange = v => ShowTimeZone = v
         };
 
-        showTimeZoneOption.OnValueChange = value => {
-            ShowTimeZone = value;
-            Module.TimeOverlay?.UpdateSettings();
+        TextMenu.OnOff timeOverlayOutlineOption = new TextMenu.OnOff(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TIME_OVERLAY_OUTLINE"), TimeOverlayOutline) {
+            OnValueChange = v => {
+                TimeOverlayOutline = v;
+                TimeOverlay.Outline = TimeOverlayOutline;
+            }
         };
 
-        dateFormatOption.OnValueChange = value => {
-            DateFormat = value;
-            Module.TimeOverlay?.UpdateSettings();
-        };
-
-        positionOption.OnValueChange = value => {
-            TimeOverlayPosition = value;
-            Module.TimeOverlay?.UpdateSettings();
-        };
-
-        sizeOption.OnValueChange = value => {
-            TimeOverlaySize = value;
-            Module.TimeOverlay?.UpdateSettings();
-        };
-
-        timeOverlayColorOption.OnValueChange = value => {
-            TimeOverlayColor = value;
-            Module.TimeOverlay?.UpdateSettings();
-        };
-
-        timeOverlayOutlineOption.OnValueChange = value => {
-            TimeOverlayOutline = value;
-            Module.TimeOverlay?.UpdateSettings();
-
-            timeOverlayOutlineColorOption.Disabled = !ShowRealTimeOverlay || !TimeOverlayOutline;
-        };
-
-        timeOverlayOutlineColorOption.OnValueChange = value => {
-            TimeOverlayOutlineColor = value;
-            Module.TimeOverlay?.UpdateSettings();
+        ColorOption timeOverlayColorOption = new ColorOption(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TIME_OVERLAY_COLOR"), TimeOverlayColor) {
+            OnValueChange = v => {
+                TimeOverlayColor = v;
+                TimeOverlay.Color = v;
+            }
+        };     
+        ColorOption timeOverlayOutlineColorOption = new ColorOption(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TIME_OVERLAY_OUTLINE_COLOR"), TimeOverlayOutlineColor) {
+            OnValueChange = v => {
+                TimeOverlayOutlineColor = v;
+                TimeOverlay.OutlineColor = TimeOverlayOutlineColor;
+            }
         }; 
 
-        timeOverlayTransparencyOption.OnValueChange = value => {
-            TimeOverlayTransparency = value;
-            Module.TimeOverlay?.UpdateSettings();
+        TextMenuExt.EnumerableSlider<float> sizeOption = new TextMenuExt.EnumerableSlider<float>(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TIME_OVERLAY_SIZE"), percentOptions, TimeOverlaySize) {
+            OnValueChange = v => {
+                TimeOverlaySize = v;
+                TimeOverlay.Scale = TimeOverlaySize;
+            }
+        };
+        TextMenuExt.EnumerableSlider<float> timeOverlayOpacityOption = new TextMenuExt.EnumerableSlider<float>(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TIME_OVERLAY_OPACITY"), percentOptions, TimeOverlayOpacity) {
+            OnValueChange = v => {
+                TimeOverlayOpacity = v;
+                TimeOverlay.Opacity = TimeOverlayOpacity;
+            }
+        };
+        
+        TextMenuExt.EnumerableSlider<DateFormat> dateFormatOption = new TextMenuExt.EnumerableSlider<DateFormat>(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_DATE_FORMAT"), new List<KeyValuePair<DateFormat, string>>() {
+            new KeyValuePair<DateFormat, string>(DateFormat.LONG, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_DATEFORMAT_LONG")),
+            new KeyValuePair<DateFormat, string>(DateFormat.SHORT, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_DATEFORMAT_SHORT"))
+        }, DateFormat) {
+            OnValueChange = v => DateFormat = v
+        };
+        
+        TextMenuExt.EnumerableSlider<TimeOverlayPosition> positionOption = new TextMenuExt.EnumerableSlider<TimeOverlayPosition>(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TIME_OVERLAY_POSITION"), new List<KeyValuePair<TimeOverlayPosition, string>>() {
+            new KeyValuePair<TimeOverlayPosition, string>(TimeOverlayPosition.TopLeft, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TEXTOVERLAYPOSITION_TOPLEFT")),
+            new KeyValuePair<TimeOverlayPosition, string>(TimeOverlayPosition.TopMiddle, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TEXTOVERLAYPOSITION_TOPMIDDLE")),
+            new KeyValuePair<TimeOverlayPosition, string>(TimeOverlayPosition.TopRight, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TEXTOVERLAYPOSITION_TOPRIGHT")),
+            new KeyValuePair<TimeOverlayPosition, string>(TimeOverlayPosition.BottomLeft, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TEXTOVERLAYPOSITION_BOTTOMLEFT")),
+            new KeyValuePair<TimeOverlayPosition, string>(TimeOverlayPosition.BottomMiddle, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TEXTOVERLAYPOSITION_BOTTOMMIDDLE")),
+            new KeyValuePair<TimeOverlayPosition, string>(TimeOverlayPosition.BottomRight, Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TEXTOVERLAYPOSITION_BOTTOMRIGHT"))
+        }, TimeOverlayPosition) {
+            OnValueChange = v => {
+                TimeOverlayPosition = v;
+                TimeOverlay.SetPosition(TimeOverlayPosition, TimeOverlayXOffset, TimeOverlayYOffset);
+            }
         };
 
-        timeOverlayXOffsetOption.OnValueChange = value => TimeOverlayXOffset = value;
-        timeOverlayYOffsetOption.OnValueChange = value => TimeOverlayYOffset = value;
-
-        showTimeZoneOption.Disabled = !ShowRealTimeOverlay;
-        timeOverlayOutlineOption.Disabled = !ShowRealTimeOverlay;
-        timeOverlayColorOption.Disabled = !ShowRealTimeOverlay;
-        sizeOption.Disabled = !ShowRealTimeOverlay;
-        dateFormatOption.Disabled = !ShowRealTimeOverlay;
-        positionOption.Disabled = !ShowRealTimeOverlay;
-        timeOverlayXOffsetOption.Disabled = !ShowRealTimeOverlay;
-        timeOverlayYOffsetOption.Disabled = !ShowRealTimeOverlay;
-        timeOverlayTransparencyOption.Disabled = !ShowRealTimeOverlay;
-
-        timeOverlayOutlineColorOption.Disabled = !ShowRealTimeOverlay || !TimeOverlayOutline;
+        TextMenuExt.IntSlider timeOverlayXOffsetOption = new TextMenuExt.IntSlider(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TIME_OVERLAY_X_OFFSET"), -2000, 2000, TimeOverlayXOffset) {
+            OnValueChange = v => {
+                TimeOverlayXOffset = v;
+                TimeOverlay.SetPosition(TimeOverlayPosition, TimeOverlayXOffset, TimeOverlayYOffset);
+            }
+        };
+        TextMenuExt.IntSlider timeOverlayYOffsetOption = new TextMenuExt.IntSlider(Dialog.Clean("MODOPTION_KONGTIAO_TOOLBOX_TIME_OVERLAY_Y_OFFSET"), -2000, 2000, TimeOverlayYOffset) {
+            OnValueChange = v => {
+                TimeOverlayYOffset = v;
+                TimeOverlay.SetPosition(TimeOverlayPosition, TimeOverlayXOffset, TimeOverlayYOffset);
+            }
+        };
 
         subMenu.Add(timeOverlayOption);
         subMenu.Add(showTimeZoneOption);
-        subMenu.Add(timeOverlayTransparencyOption);
+        subMenu.Add(timeOverlayOpacityOption);
         subMenu.Add(timeOverlayColorOption);
+        timeOverlayColorOption.AddDescription(subMenu, menu, colorOptionDesc);
         subMenu.Add(timeOverlayOutlineOption);
         subMenu.Add(timeOverlayOutlineColorOption);
+        timeOverlayOutlineColorOption.AddDescription(subMenu, menu, colorOptionDesc);
         subMenu.Add(sizeOption);
         subMenu.Add(dateFormatOption);
         subMenu.Add(positionOption);
@@ -205,8 +205,6 @@ public class KongtiaoToolboxModuleSettings : EverestModuleSettings {
         subMenu.Add(timeOverlayYOffsetOption);
 
         menu.Add(subMenu);
-
-        Utils.Log("Time overlay options added");
     }
 
     [SettingName("MODOPTION_KONGTIAO_TOOLBOX_TOGGLE_TIME_OVERLAY")]
